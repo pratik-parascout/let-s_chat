@@ -1,0 +1,139 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Arial', sans-serif;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #1a1a1a;
+  color: #ffffff;
+}
+
+.signup-container {
+  background: #2d2d2d;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 400px;
+  border: 1px solid #404040;
+}
+
+.signup-container h2 {
+  text-align: center;
+  color: #ffffff;
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.8rem;
+  background: #3d3d3d;
+  border: none;
+  border-bottom: 2px solid #505050;
+  outline: none;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  color: #ffffff;
+  border-radius: 4px;
+}
+
+.form-group input:focus {
+  border-bottom-color: #7289da;
+  background: #454545;
+}
+
+.form-group input::placeholder {
+  color: #888888;
+}
+
+.signup-btn {
+  width: 100%;
+  padding: 0.8rem;
+  background: #7289da;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  font-weight: 600;
+}
+
+.signup-btn:hover {
+  background: #5b6eae;
+}
+
+.login-link {
+  text-align: center;
+  margin-top: 1.5rem;
+  color: #b0b0b0;
+}
+
+.login-link a {
+  color: #7289da;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.login-link a:hover {
+  text-decoration: underline;
+  color: #5b6eae;
+}
+
+.error {
+  color: #ff5555;
+  font-size: 0.8rem;
+  margin-top: 0.2rem;
+}
+
+@media (max-width: 480px) {
+  .signup-container {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.signup-container {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.form-group input:focus {
+  box-shadow: 0 0 0 2px rgba(114, 137, 218, 0.3);
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #ffffff;
+  -webkit-box-shadow: 0 0 0px 1000px #3d3d3d inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
