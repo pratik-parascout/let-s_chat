@@ -1,10 +1,20 @@
 const path = require('path');
-
 const express = require('express');
+const cors = require('cors');
 const app = express();
 
 const sequelize = require('./utils/database');
 const signupRoutes = require('./routes/signup');
+
+// CORS Configuration
+app.use(
+  cors({
+    origin: 'http://localhost:3000',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  })
+);
 
 // Middleware
 app.use(express.static(path.join(__dirname, 'public/html')));
@@ -25,7 +35,7 @@ app.use((err, req, res, next) => {
 // Server
 const PORT = process.env.PORT || 3000;
 sequelize
-  .sync({ force: true })
+  .sync()
   .then(() => {
     app.listen(process.env.PORT || 3000, '0.0.0.0', () => {
       console.log('Server is running on port 3000');

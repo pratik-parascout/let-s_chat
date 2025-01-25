@@ -12,18 +12,17 @@ exports.postSignup = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Check if the user already exists
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ msg: 'User already exists' });
+    }
 
+    // Create a new user
+    const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create(
-      {
-        username,
-        email,
-        phone,
-        password: hashedPassword,
-      },
-      {
-        transaction: t,
-      }
+      { username, email, phone, password: hashedPassword },
+      { transaction: t }
     );
 
     await t.commit();
@@ -31,7 +30,9 @@ exports.postSignup = async (req, res) => {
   } catch (err) {
     await t.rollback();
 
-    if (err.name === 'SequelizeUniqueConstraintError') {
+    if (err.name === 'SequelizeValidationError') {
+      res.status(400).json({ error: err.message });
+    } else if (err.name === 'SequelizeUniqueConstraintError') {
       res.status(409).json({ error: 'User already exists, Please Login' });
     } else {
       console.error(err);
