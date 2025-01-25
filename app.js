@@ -3,6 +3,7 @@ const path = require('path');
 const express = require('express');
 const app = express();
 
+const sequelize = require('./utils/database');
 const signupRoutes = require('./routes/signup');
 
 // Middleware
@@ -23,10 +24,13 @@ app.use((err, req, res, next) => {
 
 // Server
 const PORT = process.env.PORT || 3000;
-app
-  .listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+sequelize
+  .sync({ force: true })
+  .then(() => {
+    app.listen(process.env.PORT || 3000, '0.0.0.0', () => {
+      console.log('Server is running on port 3000');
+    });
   })
-  .on('error', (err) => {
-    console.error('Server failed to start:', err);
+  .catch((err) => {
+    console.error('Error starting server:', err);
   });
