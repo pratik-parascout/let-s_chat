@@ -14,7 +14,8 @@ body {
   color: #ffffff;
 }
 
-.signup-container {
+.signup-container,
+.login-container {
   background: #2d2d2d;
   padding: 2rem;
   border-radius: 8px;
@@ -24,7 +25,8 @@ body {
   border: 1px solid #404040;
 }
 
-.signup-container h2 {
+.signup-container h2,
+.login-container h2 {
   text-align: center;
   color: #ffffff;
   margin-bottom: 1.5rem;
@@ -64,7 +66,8 @@ body {
   color: #888888;
 }
 
-.signup-btn {
+.signup-btn,
+.login-btn {
   width: 100%;
   padding: 0.8rem;
   background: #7289da;
@@ -77,23 +80,27 @@ body {
   font-weight: 600;
 }
 
-.signup-btn:hover {
+.signup-btn:hover,
+.login-btn:hover {
   background: #5b6eae;
 }
 
-.login-link {
+.login-link,
+.signup-link {
   text-align: center;
   margin-top: 1.5rem;
   color: #b0b0b0;
 }
 
-.login-link a {
+.login-link a,
+.signup-link a {
   color: #7289da;
   text-decoration: none;
   font-weight: 500;
 }
 
-.login-link a:hover {
+.login-link a:hover,
+.signup-link a:hover {
   text-decoration: underline;
   color: #5b6eae;
 }

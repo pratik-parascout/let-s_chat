@@ -1,10 +1,13 @@
+require('dotenv').config();
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const app = express();
 
 const sequelize = require('./utils/database');
+
 const signupRoutes = require('./routes/signup');
+const loginRoutes = require('./routes/login');
 
 // CORS Configuration
 app.use(
@@ -25,6 +28,7 @@ app.use(express.urlencoded({ extended: false }));
 
 // Routes
 app.use('/signup', signupRoutes);
+app.use('/login', loginRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
