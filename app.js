@@ -42,8 +42,6 @@ app.use((err, req, res, next) => {
 });
 
 // Table relations
-Message.belongsTo(User, { foreignKey: 'userId' });
-User.hasMany(Message, { foreignKey: 'userId' });
 
 // Server
 const PORT = process.env.PORT || 3000;

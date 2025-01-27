@@ -32,7 +32,7 @@ exports.postLogin = async (req, res) => {
       { expiresIn: '24h' }
     );
 
-    console.log('Generated token', token);
+    //console.log('Generated token', token);
     res.status(200).json({
       token,
       username: user.username,

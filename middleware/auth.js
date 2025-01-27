@@ -5,9 +5,9 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 const auth = async (req, res, next) => {
   try {
-    console.log('Received headers:', req.headers); // Debug
+    //console.log('Received headers:', req.headers); // Debug
     const token = req.header('Authorization')?.replace('Bearer ', '');
-    console.log('Extracted token:', token); // Debug
+    //console.log('Extracted token:', token); // Debug
 
     if (!token) {
       console.error('No token provided');
@@ -18,7 +18,7 @@ const auth = async (req, res, next) => {
       token,
       process.env.JWT_SECRET || 'your_jwt_secret'
     );
-    console.log('Decoded token:', decoded); // Debug
+    //console.log('Decoded token:', decoded); // Debug
 
     const user = await User.findByPk(decoded.userId);
     if (!user) {

@@ -11,49 +11,41 @@ exports.postMessage = async (req, res) => {
     const { content } = req.body;
     const userId = req.user.id;
 
-    if (!content?.trim()) {
-      return res.status(400).json({ error: 'Message cannot be empty' });
+    const user = await User.findByPk(userId, { attributes: ['username'] });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
     }
 
+    // Create a new message with content, userId, and username
     const message = await Message.create({
-      content: content.trim(),
-      userId,
-    });
-
-    const messageWithUser = await Message.findByPk(message.id, {
-      include: [{ model: User, attributes: ['username'] }],
+      content,
+      // userId,
+      username: user.username,
     });
 
     res.status(201).json({
-      message: 'Message sent',
-      content: messageWithUser.content,
-      username: messageWithUser.User.username,
+      id: message.id,
+      content: message.content,
+      username: message.username,
+      createdAt: message.createdAt,
     });
   } catch (error) {
-    console.error('Message error:', error);
-    res.status(500).json({ error: 'Failed to send message' });
+    console.error('Store message error:', error);
+    res.status(500).json({ error: 'Failed to store message' });
   }
 };
 
 exports.getMessages = async (req, res) => {
   try {
     const messages = await Message.findAll({
-      include: [{ model: User, attributes: ['username'] }],
       order: [['createdAt', 'ASC']],
+      limit: 50,
     });
 
-    // Log the messages to check if User is being included
-    console.log(messages);
-
-    const formatted = messages.map((m) => ({
-      content: m.content,
-      username: m.username, // Check if User is defined
-      createdAt: m.createdAt,
-    }));
-
-    res.status(200).json(formatted);
+    res.status(200).json(messages);
   } catch (error) {
     console.error('Fetch messages error:', error);
-    res.status(500).json({ error: 'Failed to load messages' });
+    res.status(500).json({ error: 'Failed to fetch messages' });
   }
 };

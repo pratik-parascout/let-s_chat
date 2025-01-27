@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const messageInput = document.getElementById('message-input');
   const sendButton = document.getElementById('send-button');
 
-  // Authentication check
   const token = localStorage.getItem('token');
   if (!token) {
     window.location.href = '/login';
@@ -12,30 +11,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
   axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-  // Input handling
   messageInput.addEventListener('input', () => {
     sendButton.disabled = !messageInput.value.trim();
   });
 
-  // Message sending
-  sendButton.addEventListener('click', async () => {
+  const sendMessage = async () => {
     const content = messageInput.value.trim();
     if (!content) return;
 
     try {
-      const response = await axios.post(
-        '/chat',
-        { content },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await axios.post('/chat', { content });
 
-      // Updated to use username from response
-      addMessage(response.data.content, response.data.username);
-      messageInput.value = '';
-      sendButton.disabled = true;
-      scrollToBottom(true);
+      // Ensure response data contains all fields
+      const { content: messageContent, username, userId } = response.data;
+
+      if (messageContent && username) {
+        addMessage(messageContent, username, userId);
+        messageInput.value = '';
+        sendButton.disabled = true;
+        scrollToBottom(true);
+      } else {
+        console.error('Invalid response structure:', response.data);
+        alert('Failed to send the message.');
+      }
     } catch (error) {
+      console.error('Send message error:', error);
       handleErrors(error);
+    }
+  };
+
+  sendButton.addEventListener('click', sendMessage);
+
+  messageInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      sendMessage();
     }
   });
 
@@ -44,18 +53,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadMessages() {
     try {
-      const response = await axios.get('/chat/messages', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get('/chat/messages');
       messagesContainer.innerHTML = '';
-      response.data.forEach((msg) => addMessage(msg.content, msg.username));
+      response.data.forEach((msg) =>
+        addMessage(msg.content, msg.username, msg.userId)
+      );
       scrollToBottom(true);
     } catch (error) {
       handleErrors(error);
     }
   }
 
-  function addMessage(content, username) {
+  function addMessage(content, username, userId) {
     const messageDiv = document.createElement('div');
     messageDiv.classList.add('message');
 
