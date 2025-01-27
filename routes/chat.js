@@ -1,11 +1,14 @@
 const express = require('express');
-
 const router = express.Router();
+const chatController = require('../controllers/chat');
+const auth = require('../middleware/auth'); // Assuming the 'auth' middleware is used to authenticate users
 
-const chatController = require('../controllers/chat.js');
+router.get('/', chatController.getChat);
 
-router.get('/', chatController.getPage);
+// Post a new chat message
+router.post('/', auth, chatController.postMessage);
 
-// router.post('/', loginController.postLogin);
+// Get all chat messages
+router.get('/messages', auth, chatController.getMessages);
 
 module.exports = router;

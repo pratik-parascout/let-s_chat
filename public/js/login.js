@@ -9,44 +9,18 @@ document.querySelector('#login-form').addEventListener('submit', async (e) => {
     return;
   }
 
-  const obj = { email, password };
-
   try {
-    const response = await axios.post('/login', obj);
+    const response = await axios.post('/login', { email, password });
 
     if (response.status === 200) {
       localStorage.setItem('token', response.data.token);
-      localStorage.setItem('userId', response.data.userId);
-
-      axios.defaults.headers.common[
-        'Authorization'
-      ] = `Bearer ${response.data.token}`;
-
-      alert(response.data.msg || 'Login successful');
-      window.location.href = '/chat';
+      localStorage.setItem('username', response.data.username); // NEW
+      setTimeout(() => {
+        window.location.href = '/chat';
+      }, 100);
     }
   } catch (err) {
     console.error(err);
-
-    if (err.response) {
-      switch (err.response.status) {
-        case 400:
-          alert('Please provide both email and password');
-          break;
-        case 401:
-          alert('Invalid credentials');
-          break;
-        case 404:
-          alert('User not found');
-          break;
-        case 500:
-          alert('Server error. Please try again later');
-          break;
-        default:
-          alert(err.response.data.msg || 'An error occurred during login');
-      }
-    } else {
-      alert('Unable to connect to the server. Please try again later.');
-    }
+    alert(err.response?.data?.msg || 'Login failed. Please try again.');
   }
 });

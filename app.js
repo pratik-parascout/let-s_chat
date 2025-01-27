@@ -10,13 +10,16 @@ const signupRoutes = require('./routes/signup');
 const loginRoutes = require('./routes/login');
 const chatRoutes = require('./routes/chat');
 
+const Message = require('./models/chat');
+const User = require('./models/user');
+
 // CORS Configuration
 app.use(
   cors({
-    origin: 'http://localhost:3000',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
+    credentials: true, // Add this
   })
 );
 
@@ -37,6 +40,10 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send('Something broke!');
 });
+
+// Table relations
+Message.belongsTo(User, { foreignKey: 'userId' });
+User.hasMany(Message, { foreignKey: 'userId' });
 
 // Server
 const PORT = process.env.PORT || 3000;
