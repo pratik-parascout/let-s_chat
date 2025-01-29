@@ -1,6 +1,7 @@
 const path = require('path');
 const Message = require('../models/chat');
 const User = require('../models/user');
+const { Op } = require('sequelize');
 
 exports.getChat = (req, res) => {
   res.sendFile(path.join(__dirname, '../public/html/chat.html'));
@@ -38,14 +39,18 @@ exports.postMessage = async (req, res) => {
 
 exports.getMessages = async (req, res) => {
   try {
+    const lastMessageId = parseInt(req.query.lastMessageId) || 0;
+
     const messages = await Message.findAll({
-      order: [['createdAt', 'ASC']],
-      limit: 50,
+      where: {
+        id: { [Op.gt]: lastMessageId },
+      },
+      order: [['id', 'ASC']],
     });
 
-    res.status(200).json(messages);
+    res.json(messages);
   } catch (error) {
-    console.error('Fetch messages error:', error);
+    console.error('Error fetching new messages:', error);
     res.status(500).json({ error: 'Failed to fetch messages' });
   }
 };

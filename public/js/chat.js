@@ -11,109 +11,94 @@ document.addEventListener('DOMContentLoaded', () => {
 
   axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-  let lastMessageId = null;
+  let storedMessages = JSON.parse(localStorage.getItem('messages')) || [];
+  let lastMessageId = storedMessages.length
+    ? storedMessages[storedMessages.length - 1].id
+    : 0;
 
-  let storedMessages = JSON.parse(localStorage.getItem('chatMessages')) || [];
-  displayMessages(storedMessages);
+  // Display stored messages instantly
+  storedMessages.forEach(({ content, username }) =>
+    addMessage(content, username)
+  );
 
-  if (storedMessages.length > 0) {
-    lastMessageId = storedMessages[storedMessages.length - 1].id;
-  }
+  // Fetch only new messages
+  loadNewMessages();
 
   messageInput.addEventListener('input', () => {
     sendButton.disabled = !messageInput.value.trim();
   });
 
-  const sendMessage = async () => {
+  sendButton.addEventListener('click', sendMessage);
+  messageInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMessage();
+  });
+
+  async function sendMessage() {
     const content = messageInput.value.trim();
     if (!content) return;
 
     try {
       const response = await axios.post('/chat', { content });
+      const { content: messageContent, username, id } = response.data;
 
-      const { id, content: messageContent, username, userId } = response.data;
+      addMessage(messageContent, username);
+      updateLocalStorage({ id, content: messageContent, username });
 
-      if (messageContent && username) {
-        addMessage(id, messageContent, username, userId);
-        messageInput.value = '';
-        sendButton.disabled = true;
-        scrollToBottom(true);
-
-        updateLocalStorage({ id, content: messageContent, username, userId });
-      } else {
-        console.error('Invalid response structure:', response.data);
-        alert('Failed to send the message.');
-      }
+      messageInput.value = '';
+      sendButton.disabled = true;
+      scrollToBottom(true);
     } catch (error) {
       console.error('Send message error:', error);
       handleErrors(error);
     }
-  };
-
-  sendButton.addEventListener('click', sendMessage);
-
-  messageInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      sendMessage();
-    }
-  });
+  }
 
   async function loadNewMessages() {
     try {
       const response = await axios.get(
-        `/chat/messages?lastMessageId=${lastMessageId || 0}`
+        `/chat/messages?lastMessageId=${lastMessageId}`
       );
       const newMessages = response.data;
 
-      if (newMessages.length === 0) return;
+      newMessages.forEach(({ id, content, username }) => {
+        addMessage(content, username);
+        updateLocalStorage({ id, content, username });
+      });
 
-      newMessages.forEach((msg) =>
-        addMessage(msg.id, msg.content, msg.username, msg.userId)
-      );
-      lastMessageId = newMessages[newMessages.length - 1].id;
+      if (newMessages.length) {
+        lastMessageId = newMessages[newMessages.length - 1].id;
+      }
 
-      newMessages.forEach(updateLocalStorage);
+      // scrollToBottom(true);
     } catch (error) {
       handleErrors(error);
     }
   }
 
-  function addMessage(id, content, username, userId) {
-    if (document.getElementById(`message-${id}`)) return;
-
+  function addMessage(content, username) {
     const messageDiv = document.createElement('div');
     messageDiv.classList.add('message');
-    messageDiv.id = `message-${id}`;
 
     const userSpan = document.createElement('span');
     userSpan.classList.add('username');
     userSpan.textContent = `${username}: `;
-    messageDiv.appendChild(userSpan);
 
     const contentSpan = document.createElement('span');
     contentSpan.textContent = content;
-    messageDiv.appendChild(contentSpan);
 
+    messageDiv.appendChild(userSpan);
+    messageDiv.appendChild(contentSpan);
     messagesContainer.appendChild(messageDiv);
   }
 
-  function displayMessages(messages) {
-    messagesContainer.innerHTML = ''; // Clear previous messages
-    messages.forEach((msg) =>
-      addMessage(msg.id, msg.content, msg.username, msg.userId)
-    );
-    scrollToBottom(true);
-  }
-
   function updateLocalStorage(newMessage) {
-    let messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+    storedMessages.push(newMessage);
 
-    messages.push(newMessage);
-    if (messages.length > 10) {
-      messages = messages.slice(-10);
+    if (storedMessages.length > 10) {
+      storedMessages.shift(); // Keep only the latest 10 messages
     }
 
-    localStorage.setItem('chatMessages', JSON.stringify(messages));
+    localStorage.setItem('messages', JSON.stringify(storedMessages));
   }
 
   function scrollToBottom(force = false) {
@@ -140,6 +125,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Load new messages every second
-  setInterval(loadNewMessages, 1000);
+  setInterval(loadNewMessages, 1000); // Check for new messages every second
 });
