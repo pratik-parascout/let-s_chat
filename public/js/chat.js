@@ -11,7 +11,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-  let lastMessageId = null; // Track the last message ID
+  let lastMessageId = null;
+
+  let storedMessages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+  displayMessages(storedMessages);
+
+  if (storedMessages.length > 0) {
+    lastMessageId = storedMessages[storedMessages.length - 1].id;
+  }
 
   messageInput.addEventListener('input', () => {
     sendButton.disabled = !messageInput.value.trim();
@@ -24,7 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const response = await axios.post('/chat', { content });
 
-      // Ensure response data contains all fields
       const { id, content: messageContent, username, userId } = response.data;
 
       if (messageContent && username) {
@@ -32,6 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
         messageInput.value = '';
         sendButton.disabled = true;
         scrollToBottom(true);
+
+        updateLocalStorage({ id, content: messageContent, username, userId });
       } else {
         console.error('Invalid response structure:', response.data);
         alert('Failed to send the message.');
@@ -50,36 +58,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  async function loadMessages() {
+  async function loadNewMessages() {
     try {
-      const response = await axios.get('/chat/messages');
-      const messages = response.data;
-
-      if (messages.length === 0) return;
-
-      const newMessages = messages.filter(
-        (msg) => lastMessageId === null || msg.id > lastMessageId
+      const response = await axios.get(
+        `/chat/messages?lastMessageId=${lastMessageId || 0}`
       );
+      const newMessages = response.data;
 
-      if (newMessages.length > 0) {
-        newMessages.forEach((msg) =>
-          addMessage(msg.id, msg.content, msg.username, msg.userId)
-        );
-        lastMessageId = newMessages[newMessages.length - 1].id; // Update last loaded message ID
-        scrollToBottom(true);
-      }
+      if (newMessages.length === 0) return;
+
+      newMessages.forEach((msg) =>
+        addMessage(msg.id, msg.content, msg.username, msg.userId)
+      );
+      lastMessageId = newMessages[newMessages.length - 1].id;
+
+      newMessages.forEach(updateLocalStorage);
     } catch (error) {
       handleErrors(error);
     }
   }
 
   function addMessage(id, content, username, userId) {
-    // Check if message is already added
     if (document.getElementById(`message-${id}`)) return;
 
     const messageDiv = document.createElement('div');
     messageDiv.classList.add('message');
-    messageDiv.id = `message-${id}`; // Assign unique ID
+    messageDiv.id = `message-${id}`;
 
     const userSpan = document.createElement('span');
     userSpan.classList.add('username');
@@ -91,6 +95,25 @@ document.addEventListener('DOMContentLoaded', () => {
     messageDiv.appendChild(contentSpan);
 
     messagesContainer.appendChild(messageDiv);
+  }
+
+  function displayMessages(messages) {
+    messagesContainer.innerHTML = ''; // Clear previous messages
+    messages.forEach((msg) =>
+      addMessage(msg.id, msg.content, msg.username, msg.userId)
+    );
+    scrollToBottom(true);
+  }
+
+  function updateLocalStorage(newMessage) {
+    let messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+
+    messages.push(newMessage);
+    if (messages.length > 10) {
+      messages = messages.slice(-10);
+    }
+
+    localStorage.setItem('chatMessages', JSON.stringify(messages));
   }
 
   function scrollToBottom(force = false) {
@@ -117,9 +140,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Load messages initially
-  loadMessages();
-
-  // Check for new messages every second
-  setInterval(loadMessages, 1000);
+  // Load new messages every second
+  setInterval(loadNewMessages, 1000);
 });
