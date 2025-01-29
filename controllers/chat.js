@@ -20,7 +20,7 @@ exports.postMessage = async (req, res) => {
     // Create a new message with content, userId, and username
     const message = await Message.create({
       content,
-      // userId,
+      userId,
       username: user.username,
     });
 

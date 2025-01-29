@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
+  let lastMessageId = null; // Track the last message ID
+
   messageInput.addEventListener('input', () => {
     sendButton.disabled = !messageInput.value.trim();
   });
@@ -23,10 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const response = await axios.post('/chat', { content });
 
       // Ensure response data contains all fields
-      const { content: messageContent, username, userId } = response.data;
+      const { id, content: messageContent, username, userId } = response.data;
 
       if (messageContent && username) {
-        addMessage(messageContent, username, userId);
+        addMessage(id, messageContent, username, userId);
         messageInput.value = '';
         sendButton.disabled = true;
         scrollToBottom(true);
@@ -48,25 +50,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Load initial messages
-  loadMessages();
-
   async function loadMessages() {
     try {
       const response = await axios.get('/chat/messages');
-      messagesContainer.innerHTML = '';
-      response.data.forEach((msg) =>
-        addMessage(msg.content, msg.username, msg.userId)
+      const messages = response.data;
+
+      if (messages.length === 0) return;
+
+      const newMessages = messages.filter(
+        (msg) => lastMessageId === null || msg.id > lastMessageId
       );
-      scrollToBottom(true);
+
+      if (newMessages.length > 0) {
+        newMessages.forEach((msg) =>
+          addMessage(msg.id, msg.content, msg.username, msg.userId)
+        );
+        lastMessageId = newMessages[newMessages.length - 1].id; // Update last loaded message ID
+        scrollToBottom(true);
+      }
     } catch (error) {
       handleErrors(error);
     }
   }
 
-  function addMessage(content, username, userId) {
+  function addMessage(id, content, username, userId) {
+    // Check if message is already added
+    if (document.getElementById(`message-${id}`)) return;
+
     const messageDiv = document.createElement('div');
     messageDiv.classList.add('message');
+    messageDiv.id = `message-${id}`; // Assign unique ID
 
     const userSpan = document.createElement('span');
     userSpan.classList.add('username');
@@ -103,4 +116,10 @@ document.addEventListener('DOMContentLoaded', () => {
       alert('Network error. Check your internet connection.');
     }
   }
+
+  // Load messages initially
+  loadMessages();
+
+  // Check for new messages every second
+  setInterval(loadMessages, 1000);
 });
