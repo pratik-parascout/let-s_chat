@@ -3,23 +3,10 @@ const sequelize = require('../utils/database');
 const User = require('./user');
 const Group = require('./group');
 
-const Message = sequelize.define('Message', {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true,
-  },
-  content: {
-    type: DataTypes.TEXT,
-    allowNull: false,
-  },
-  username: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
+const UserGroup = sequelize.define('UserGroup', {
   userId: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    primaryKey: true,
     references: {
       model: User,
       key: 'id',
@@ -27,7 +14,7 @@ const Message = sequelize.define('Message', {
   },
   groupId: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    primaryKey: true,
     references: {
       model: Group,
       key: 'id',
@@ -35,4 +22,4 @@ const Message = sequelize.define('Message', {
   },
 });
 
-module.exports = Message;
+module.exports = UserGroup;

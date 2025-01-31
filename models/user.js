@@ -1,12 +1,10 @@
-const { Sequelize, DataTypes } = require('sequelize');
-
+const { DataTypes } = require('sequelize');
 const sequelize = require('../utils/database');
 
-const User = sequelize.define('user', {
+const User = sequelize.define('User', {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
-    allowNull: false,
     primaryKey: true,
   },
   username: {
@@ -16,6 +14,7 @@ const User = sequelize.define('user', {
   email: {
     type: DataTypes.STRING,
     allowNull: false,
+    unique: true,
   },
   phone: {
     type: DataTypes.STRING,
@@ -27,7 +26,6 @@ const User = sequelize.define('user', {
   },
   lastLogin: {
     type: DataTypes.DATE,
-    allowNull: true,
   },
 });
 

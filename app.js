@@ -10,8 +10,13 @@ const signupRoutes = require('./routes/signup');
 const loginRoutes = require('./routes/login');
 const chatRoutes = require('./routes/chat');
 
-const Message = require('./models/chat');
-const User = require('./models/user');
+const {
+  User,
+  Group,
+  Message,
+  GroupMember,
+  UserGroup,
+} = require('./models/associations');
 
 // CORS Configuration
 app.use(
@@ -41,15 +46,13 @@ app.use((err, req, res, next) => {
   res.status(500).send('Something broke!');
 });
 
-// Table relations
-
 // Server
 const PORT = process.env.PORT || 3000;
 sequelize
   .sync()
   .then(() => {
-    app.listen(process.env.PORT || 3000, '0.0.0.0', () => {
-      console.log('Server is running on port 3000');
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
     });
   })
   .catch((err) => {

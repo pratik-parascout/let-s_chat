@@ -14,23 +14,94 @@ body {
   justify-content: center;
 }
 
-.chat-container {
+.container {
   width: 90%;
-  max-width: 800px;
+  max-width: 1000px;
   height: 90vh;
+  display: flex;
   background: #2d2d2d;
   border-radius: 16px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* Sidebar for Groups */
+.sidebar {
+  width: 30%;
+  background: #232323;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  gap: 1rem;
+  border-right: 2px solid #363636;
+}
+
+.sidebar h2 {
+  color: #7289da;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+#group-list {
+  list-style: none;
+  overflow-y: auto;
+  max-height: 65vh;
+}
+
+#group-list li {
+  padding: 0.8rem;
+  background: #333;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+  transition: background 0.3s;
+}
+
+#group-list li:hover {
+  background: #5b6eae;
+}
+
+#group-name {
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: none;
+  background: #404040;
+  color: white;
+  text-align: center;
+  font-size: 1rem;
+}
+
+#group-name::placeholder {
+  color: #808080;
+}
+
+#create-group {
+  padding: 0.8rem;
+  background: #7289da;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  font-size: 1rem;
+}
+
+#create-group:hover {
+  background: #5b6eae;
+}
+
+/* Chat Container */
+.chat-container {
+  width: 70%;
+  display: flex;
+  flex-direction: column;
 }
 
 .chat-header {
   background: #363636;
   padding: 1.2rem;
   text-align: center;
-  border-top-left-radius: 16px;
   border-top-right-radius: 16px;
 }
 
@@ -49,6 +120,7 @@ body {
   background: #333333;
 }
 
+/* Messages */
 .message {
   padding: 0.8rem 1.2rem;
   border-radius: 12px;
@@ -60,7 +132,6 @@ body {
   background: #404040;
   color: #a8a8a8;
   text-align: center;
-  margin: 0.5rem auto;
   font-style: italic;
   max-width: 100%;
   font-size: 0.9rem;
@@ -80,12 +151,12 @@ body {
   border-bottom-left-radius: 4px;
 }
 
+/* Chat Input */
 .chat-input-container {
   padding: 1.2rem;
   background: #363636;
   display: flex;
   gap: 0.8rem;
-  border-bottom-left-radius: 16px;
   border-bottom-right-radius: 16px;
 }
 
@@ -102,10 +173,6 @@ body {
 #message-input:focus {
   outline: none;
   box-shadow: 0 0 0 2px #7289da;
-}
-
-#message-input::placeholder {
-  color: #808080;
 }
 
 #send-button {
@@ -125,35 +192,29 @@ body {
   transform: translateY(-1px);
 }
 
-#send-button:active {
-  transform: translateY(0);
-}
-
-#send-button:disabled {
-  background: #404040;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* Scrollbar styling */
-.messages-container::-webkit-scrollbar {
+/* Scrollbar */
+.messages-container::-webkit-scrollbar,
+#group-list::-webkit-scrollbar {
   width: 8px;
 }
 
-.messages-container::-webkit-scrollbar-track {
+.messages-container::-webkit-scrollbar-track,
+#group-list::-webkit-scrollbar-track {
   background: #333333;
 }
 
-.messages-container::-webkit-scrollbar-thumb {
+.messages-container::-webkit-scrollbar-thumb,
+#group-list::-webkit-scrollbar-thumb {
   background: #4a4a4a;
   border-radius: 4px;
 }
 
-.messages-container::-webkit-scrollbar-thumb:hover {
+.messages-container::-webkit-scrollbar-thumb:hover,
+#group-list::-webkit-scrollbar-thumb:hover {
   background: #555555;
 }
 
-/* Sender name styling */
+/* Sender name */
 .sender-name {
   font-size: 0.8rem;
   margin-bottom: 0.2rem;
