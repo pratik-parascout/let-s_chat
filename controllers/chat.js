@@ -1,8 +1,8 @@
 const path = require('path');
 const Message = require('../models/chat');
 const User = require('../models/user');
-const UserGroup = require('../models/userGroup');
 const Group = require('../models/group');
+const GroupMember = require('../models/groupMember');
 const { Op } = require('sequelize');
 
 exports.getChat = (req, res) => {
@@ -14,6 +14,7 @@ exports.postMessage = async (req, res) => {
     const { content, groupId } = req.body;
     const userId = req.user.id;
 
+    // Debug logs
     console.log('Received message:', content);
     console.log('Group ID:', groupId);
 
@@ -24,12 +25,14 @@ exports.postMessage = async (req, res) => {
     }
 
     // Check if the user is part of the group
-    const isMember = await UserGroup.findOne({ where: { userId, groupId } });
-    if (!isMember) {
+    const membership = await GroupMember.findOne({
+      where: { userId, groupId },
+    });
+    if (!membership) {
       return res.status(403).json({ error: 'User not in this group' });
     }
 
-    // Store the message
+    // Create the message
     const message = await Message.create({
       content,
       userId,
@@ -54,12 +57,9 @@ exports.postMessage = async (req, res) => {
 exports.getMessages = async (req, res) => {
   try {
     const { groupId, lastMessageId } = req.query;
-
-    // Validate groupId
     if (!groupId) {
       return res.status(400).json({ error: 'Group ID is required' });
     }
-
     const lastId = parseInt(lastMessageId) || 0;
 
     const messages = await Message.findAll({
@@ -79,9 +79,11 @@ exports.getMessages = async (req, res) => {
 
 exports.getGroups = async (req, res) => {
   try {
+    // Assuming you have a method on the User instance to get groups
     const groups = await req.user.getGroups();
     res.json(groups);
   } catch (error) {
+    console.error('Error fetching groups:', error);
     res.status(500).json({ error: 'Failed to load groups' });
   }
 };
@@ -89,19 +91,19 @@ exports.getGroups = async (req, res) => {
 exports.createGroup = async (req, res) => {
   try {
     const { name } = req.body;
-    const userId = req.user.id; // Assuming you have user info in req.user
+    const userId = req.user.id;
 
-    // Create the group
+    // Create the group (assuming Group has a creatorId field)
     const group = await Group.create({
       name: name,
       creatorId: userId,
     });
 
-    // Add the creator as a member using the GroupMember association
+    // Add the creator as a member with admin role
     await GroupMember.create({
       userId: userId,
       groupId: group.id,
-      isAdmin: true, // Mark the creator as admin
+      role: 'admin',
     });
 
     res.status(201).json({

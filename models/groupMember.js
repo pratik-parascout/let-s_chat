@@ -11,19 +11,22 @@ const GroupMember = sequelize.define(
     },
     role: {
       type: DataTypes.ENUM('admin', 'member'),
+      allowNull: false,
       defaultValue: 'member',
     },
     isActive: {
       type: DataTypes.BOOLEAN,
+      allowNull: false,
       defaultValue: true,
     },
   },
   {
     timestamps: true,
+    freezeTableName: true,
     indexes: [
       {
         unique: true,
-        fields: ['UserId', 'GroupId'], // Match association casing
+        fields: ['userId', 'groupId'],
       },
     ],
   }

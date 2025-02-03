@@ -4,18 +4,31 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
     <title>Let's Talk</title>
     <link rel="stylesheet" href="/css/chat.css" />
   </head>
   <body>
     <div class="container">
-      <!-- Sidebar for groups -->
+      <!-- Sidebar for Groups and Invitations -->
       <div class="sidebar">
         <h2>Groups</h2>
         <ul id="group-list"></ul>
         <input type="text" id="group-name" placeholder="New Group Name" />
         <button id="create-group">Create Group</button>
+        <hr />
+        <h3>Invitations</h3>
+        <ul id="invitation-list"></ul>
+        <hr />
+        <h3>Search Users to Invite</h3>
+        <div class="search-container">
+          <input
+            type="text"
+            id="invitation-search"
+            placeholder="Search users..."
+          />
+          <button id="search-btn">Search</button>
+        </div>
+        <ul id="search-results"></ul>
       </div>
 
       <!-- Chat Section -->
@@ -23,9 +36,7 @@
         <div class="chat-header">
           <h1 id="group-title">Let's Talk</h1>
         </div>
-        <div class="messages-container" id="messages">
-          <!-- Messages will appear here -->
-        </div>
+        <div class="messages-container" id="messages"></div>
         <div class="chat-input-container">
           <input
             type="text"
@@ -36,7 +47,6 @@
         </div>
       </div>
     </div>
-
     <script src="/js/chat.js"></script>
   </body>
 </html>

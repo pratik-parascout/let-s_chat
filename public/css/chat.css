@@ -126,17 +126,31 @@ body {
   border-radius: 12px;
   max-width: 80%;
   word-wrap: break-word;
+  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
-.message.system {
-  background: #404040;
+.message .username {
+  font-size: 0.85rem;
+  margin-bottom: 0.3rem;
   color: #a8a8a8;
-  text-align: center;
-  font-style: italic;
-  max-width: 100%;
-  font-size: 0.9rem;
+  font-weight: 500;
 }
 
+.message .content {
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.message .timestamp {
+  font-size: 0.75rem;
+  color: #cccccc;
+  margin-top: 0.4rem;
+  align-self: flex-end;
+}
+
+/* Specific styles for sent vs received messages */
 .message.sent {
   background: #7289da;
   color: white;
@@ -214,10 +228,119 @@ body {
   background: #555555;
 }
 
-/* Sender name */
-.sender-name {
-  font-size: 0.8rem;
-  margin-bottom: 0.2rem;
-  color: #a8a8a8;
-  font-weight: 500;
+/* Invitations List in Sidebar */
+#invitation-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 1rem;
+}
+
+#invitation-list li {
+  background: #444;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+#invitation-list li button {
+  background: #7289da;
+  border: none;
+  color: white;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 0.5rem;
+}
+
+#invitation-list li button:hover {
+  background: #5b6eae;
+}
+
+/* Styles for Invitation Search */
+#invitation-search {
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  border: none;
+  border-radius: 4px;
+  background: #404040;
+  color: white;
+  font-size: 1rem;
+}
+
+#invitation-search::placeholder {
+  color: #808080;
+}
+
+#search-results {
+  list-style: none;
+  margin-top: 0.5rem;
+  padding: 0;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+#search-results li {
+  padding: 0.5rem;
+  background: #444;
+  margin-bottom: 0.3rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+#search-results li button {
+  background: #7289da;
+  border: none;
+  color: white;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 0.5rem;
+}
+
+#search-results li button:hover {
+  background: #5b6eae;
+}
+
+/* Styles for Invitation Search Container */
+.search-container {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+#invitation-search {
+  flex: 1;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 4px;
+  background: #404040;
+  color: white;
+  font-size: 1rem;
+}
+
+#invitation-search::placeholder {
+  color: #808080;
+}
+
+#search-btn {
+  padding: 0.5rem 1rem;
+  background: #7289da;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+#search-btn:hover {
+  background: #5b6eae;
 }

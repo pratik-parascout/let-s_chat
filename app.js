@@ -9,6 +9,8 @@ const sequelize = require('./utils/database');
 const signupRoutes = require('./routes/signup');
 const loginRoutes = require('./routes/login');
 const chatRoutes = require('./routes/chat');
+const groupActionRoutes = require('./routes/groupAction');
+const invitationRoutes = require('./routes/invitation');
 
 const {
   User,
@@ -39,6 +41,8 @@ app.use(express.urlencoded({ extended: false }));
 app.use('/signup', signupRoutes);
 app.use('/login', loginRoutes);
 app.use('/chat', chatRoutes);
+app.use('/groups', groupActionRoutes);
+app.use('/invitations', invitationRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
