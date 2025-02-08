@@ -10,7 +10,6 @@ exports.searchUsers = async (req, res) => {
     if (!q) {
       return res.status(400).json({ error: 'Search query is required' });
     }
-
     const users = await User.findAll({
       where: {
         [Op.or]: [
@@ -42,7 +41,6 @@ exports.sendInvitation = async (req, res) => {
       return res.status(400).json({ error: 'Invitation already sent' });
     }
 
-    // Create the invitation
     const invitation = await GroupInvitation.create({
       groupId,
       invitedUserId,
@@ -57,7 +55,7 @@ exports.sendInvitation = async (req, res) => {
   }
 };
 
-// (Optional) Get pending invitations for the user
+// Get pending invitations for the user
 exports.getInvitations = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -79,7 +77,7 @@ exports.getInvitations = async (req, res) => {
   }
 };
 
-// (Optional) Accept invitation
+// Accept an invitation
 exports.acceptInvitation = async (req, res) => {
   try {
     const invitationId = req.params.id;
@@ -89,14 +87,12 @@ exports.acceptInvitation = async (req, res) => {
     }
     invitation.status = 'accepted';
     await invitation.save();
-
-    // Add the user to the group
+    // Add the user to the group via GroupMember
     await GroupMember.create({
       userId: invitation.invitedUserId,
       groupId: invitation.groupId,
       role: 'member',
     });
-
     res.json({ message: 'Invitation accepted', invitation });
   } catch (error) {
     console.error('Error accepting invitation:', error);
@@ -104,7 +100,7 @@ exports.acceptInvitation = async (req, res) => {
   }
 };
 
-// (Optional) Reject invitation
+// Reject an invitation
 exports.rejectInvitation = async (req, res) => {
   try {
     const invitationId = req.params.id;

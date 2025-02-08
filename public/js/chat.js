@@ -7,13 +7,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const groupNameInput = document.getElementById('group-name');
   const invitationList = document.getElementById('invitation-list');
   const searchInput = document.getElementById('invitation-search');
-  const searchBtn = document.getElementById('search-btn');
   const searchResultsContainer = document.getElementById('search-results');
 
   let currentGroupId = null;
   let lastMessageId = 0;
 
-  // Authentication check
   const token = localStorage.getItem('token');
   if (!token) {
     window.location.href = '/login';
@@ -21,7 +19,24 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-  // Load groups, invitations and setup event listeners
+  const socket = io();
+
+  function joinGroupRoom(groupId) {
+    socket.emit('joinGroup', groupId);
+  }
+
+  socket.on('newMessage', (message) => {
+    if (message.groupId == currentGroupId) {
+      addMessageToUI(message);
+      scrollToBottom();
+      lastMessageId = Math.max(lastMessageId, message.id);
+    }
+  });
+
+  socket.on('invitationUpdated', (data) => {
+    loadInvitations();
+  });
+
   loadGroups();
   loadInvitations();
   setupEventListeners();
@@ -37,8 +52,13 @@ document.addEventListener('DOMContentLoaded', () => {
         selectGroup(e.target.dataset.groupId);
       }
     });
-    // Handle search button click for inviting users
-    searchBtn.addEventListener('click', searchUsers);
+    // Bind search input events
+    document
+      .getElementById('search-btn')
+      .addEventListener('click', searchUsers);
+    searchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') searchUsers();
+    });
   }
 
   async function loadGroups() {
@@ -54,12 +74,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function selectGroup(groupId) {
     currentGroupId = groupId;
-    document.getElementById('group-title').textContent = document.querySelector(
+    // Update the group title in the header
+    const groupTitleElem = document.getElementById('group-title');
+    const selectedGroupElem = document.querySelector(
       `[data-group-id="${groupId}"]`
-    ).textContent;
+    );
+    groupTitleElem.textContent = selectedGroupElem
+      ? selectedGroupElem.textContent
+      : 'Group';
     messagesContainer.innerHTML = '';
     lastMessageId = 0;
-    loadMessages();
+    joinGroupRoom(groupId);
+    loadMessagesHistory();
+  }
+
+  async function loadMessagesHistory() {
+    if (!currentGroupId) return;
+    try {
+      const response = await axios.get('/chat/messages', {
+        params: { groupId: currentGroupId, lastMessageId: lastMessageId },
+      });
+      response.data.forEach((msg) => {
+        addMessageToUI(msg);
+        lastMessageId = Math.max(lastMessageId, msg.id);
+      });
+      scrollToBottom();
+    } catch (error) {
+      handleError(error);
+    }
   }
 
   async function createGroup() {
@@ -90,26 +132,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  async function loadMessages() {
-    if (!currentGroupId) return;
-    try {
-      const response = await axios.get('/chat/messages', {
-        params: { groupId: currentGroupId, lastMessageId: lastMessageId },
-      });
-      response.data.forEach((msg) => {
-        addMessageToUI(msg);
-        lastMessageId = Math.max(lastMessageId, msg.id);
-      });
-      setTimeout(loadMessages, 2000);
-    } catch (error) {
-      handleError(error);
-      setTimeout(loadMessages, 5000);
-    }
-  }
-
   function addMessageToUI(message) {
+    // Prevent duplicate rendering by checking if the message already exists
+    if (document.getElementById(`msg-${message.id}`)) return;
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message';
+    messageDiv.id = `msg-${message.id}`;
     messageDiv.innerHTML = `
       <span class="username">${message.username}:</span>
       <span class="content">${message.content}</span>
@@ -118,7 +146,6 @@ document.addEventListener('DOMContentLoaded', () => {
       ).toLocaleTimeString()}</span>
     `;
     messagesContainer.appendChild(messageDiv);
-    scrollToBottom();
   }
 
   function scrollToBottom() {
@@ -138,7 +165,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // -------------------------
   // Invitation Functions
+  // -------------------------
   async function loadInvitations() {
     try {
       const response = await axios.get('/invitations');
@@ -186,28 +215,35 @@ document.addEventListener('DOMContentLoaded', () => {
       alert('Please select a group first.');
       return;
     }
+    console.log(
+      'Sending invitation for userId:',
+      userId,
+      'in group:',
+      currentGroupId
+    );
     try {
-      await axios.post('/invitations/send', {
+      const response = await axios.post('/invitations/send', {
         groupId: currentGroupId,
         invitedUserId: userId,
       });
+      console.log('Invitation response:', response.data);
       alert('Invitation sent.');
-      // Clear search results
       searchInput.value = '';
       searchResultsContainer.innerHTML = '';
       loadInvitations();
+      socket.emit('invitationUpdated', { groupId: currentGroupId });
     } catch (error) {
       console.error('Error sending invitation:', error);
       alert(error.response?.data?.error || 'Failed to send invitation');
     }
   }
 
-  // Expose invitation functions globally so they can be called inline in HTML
   window.acceptInvitation = async function (invitationId) {
     try {
       await axios.post(`/invitations/${invitationId}/accept`);
       loadInvitations();
-      loadGroups(); // Refresh groups if the accepted invitation adds a new group
+      loadGroups();
+      socket.emit('invitationUpdated', { groupId: currentGroupId });
     } catch (error) {
       console.error('Error accepting invitation:', error);
     }
@@ -217,12 +253,13 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       await axios.post(`/invitations/${invitationId}/reject`);
       loadInvitations();
+      socket.emit('invitationUpdated', { groupId: currentGroupId });
     } catch (error) {
       console.error('Error rejecting invitation:', error);
     }
   };
 
-  // Poll for invitations every 10 seconds
-  setInterval(loadInvitations, 10000);
+  window.sendInvitationFromSearch = sendInvitationFromSearch;
+
   loadInvitations();
 });

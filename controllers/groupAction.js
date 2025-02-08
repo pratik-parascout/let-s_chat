@@ -1,6 +1,7 @@
+const GroupMember = require('../models/groupMember');
+
 exports.promoteMember = async (req, res) => {
   const { groupId, userId } = req.params;
-  // Only an admin should be allowed to do this. Check req.user's role.
   try {
     const membership = await GroupMember.findOne({
       where: { groupId, userId },
@@ -16,7 +17,6 @@ exports.promoteMember = async (req, res) => {
   }
 };
 
-// DELETE /groups/:groupId/members/:userId
 exports.removeMember = async (req, res) => {
   const { groupId, userId } = req.params;
   try {
