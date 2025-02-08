@@ -1,3 +1,4 @@
+// controllers/chat.js
 const path = require('path');
 const { Op } = require('sequelize');
 const Message = require('../models/chat');
@@ -11,17 +12,16 @@ exports.getChat = (req, res) => {
 
 exports.postMessage = async (req, res) => {
   try {
-    const { content, groupId } = req.body;
+    const { content, groupId, fileUrl, fileType } = req.body;
     const userId = req.user.id;
 
-    console.log('Received message:', content);
-    console.log('Group ID:', groupId);
-
+    // Fetch user details
     const user = await User.findByPk(userId, { attributes: ['username'] });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // Verify that the user is a member of the group
     const membership = await GroupMember.findOne({
       where: { userId, groupId },
     });
@@ -29,21 +29,26 @@ exports.postMessage = async (req, res) => {
       return res.status(403).json({ error: 'User not in this group' });
     }
 
+    // Create the message (including multimedia fields if provided)
     const message = await Message.create({
       content,
       userId,
       groupId,
       username: user.username,
+      fileUrl: fileUrl || null,
+      fileType: fileType || null,
     });
 
+    // Emit a socket event to the group room
     const io = req.app.get('io');
     io.to(`group_${groupId}`).emit('newMessage', message);
 
-    console.log('Message created:', message);
     res.status(201).json({
       id: message.id,
       content: message.content,
       username: message.username,
+      fileUrl: message.fileUrl,
+      fileType: message.fileType,
       createdAt: message.createdAt,
     });
   } catch (error) {
@@ -89,19 +94,14 @@ exports.createGroup = async (req, res) => {
   try {
     const { name } = req.body;
     const userId = req.user.id;
+    // Create group with creatorId field
     const group = await Group.create(
-      {
-        name: name,
-        creatorId: userId,
-      },
+      { name: name, creatorId: userId },
       { transaction: t }
     );
+    // Add the creator as a member with admin role
     await GroupMember.create(
-      {
-        userId: userId,
-        groupId: group.id,
-        role: 'admin',
-      },
+      { userId: userId, groupId: group.id, role: 'admin' },
       { transaction: t }
     );
     await t.commit();

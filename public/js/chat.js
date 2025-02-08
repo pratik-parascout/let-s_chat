@@ -9,11 +9,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const invitationList = document.getElementById('invitation-list');
   const searchInput = document.getElementById('invitation-search');
   const searchResultsContainer = document.getElementById('search-results');
+  const fileInput = document.getElementById('file-input');
+  const uploadBtn = document.getElementById('upload-btn');
 
   let currentGroupId = null;
-  let lastMessageId = 0; // Only used for the initial history load
+  let lastMessageId = 0; // For initial history load
 
-  // Get token and username from localStorage
   const token = localStorage.getItem('token');
   if (!token) {
     window.location.href = '/login';
@@ -25,12 +26,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize Socket.IO client
   const socket = io();
 
-  // Join a group room by emitting both groupId and username
+  // Join a group room with groupId and username
   function joinGroupRoom(groupId) {
     socket.emit('joinGroup', { groupId, username });
   }
 
-  // Listen for new messages from the server via socket
+  // Socket listeners
   socket.on('newMessage', (message) => {
     if (message.groupId == currentGroupId) {
       addMessageToUI(message);
@@ -39,22 +40,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Listen for notifications when a user joins the room
   socket.on('userJoined', (data) => {
     addSystemMessage(`${data.username} has joined the chat.`);
   });
 
-  // Listen for notifications when a user leaves the room
   socket.on('userLeft', (data) => {
     addSystemMessage(`${data.username} has left the chat.`);
   });
 
-  // Listen for invitation updates from the server
   socket.on('invitationUpdated', () => {
     loadInvitations();
   });
 
-  // Initial load of groups and invitations; then setup event listeners
+  // Initial loads and setup event listeners
   loadGroups();
   loadInvitations();
   setupEventListeners();
@@ -76,6 +74,12 @@ document.addEventListener('DOMContentLoaded', () => {
     searchInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') searchUsers();
     });
+    // Bind upload button to trigger file input
+    uploadBtn.addEventListener('click', () => {
+      fileInput.click();
+    });
+    // When a file is selected, trigger sendFile()
+    fileInput.addEventListener('change', sendFile);
   }
 
   async function loadGroups() {
@@ -99,12 +103,11 @@ document.addEventListener('DOMContentLoaded', () => {
       ? selectedGroupElem.textContent
       : 'Group';
     messagesContainer.innerHTML = '';
-    lastMessageId = 0; // Reset history loader
+    lastMessageId = 0;
     joinGroupRoom(groupId);
     loadMessagesHistory();
   }
 
-  // Load initial message history via HTTP (once) when a group is selected
   async function loadMessagesHistory() {
     if (!currentGroupId) return;
     try {
@@ -142,7 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
         groupId: currentGroupId,
       });
       messageInput.value = '';
-      // Optionally, skip immediate rendering since socket will deliver the message.
       addMessageToUI(response.data);
       scrollToBottom();
     } catch (error) {
@@ -150,19 +152,62 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  async function sendFile() {
+    if (!currentGroupId) {
+      alert('Please select a group first.');
+      return;
+    }
+    const file = fileInput.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      // Upload file to AWS S3 using our /upload endpoint
+      const uploadResponse = await axios.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const fileUrl = uploadResponse.data.fileUrl;
+      const fileType = file.type;
+      // Send a multimedia message with fileUrl and fileType
+      const messageResponse = await axios.post('/chat/messages', {
+        content: '', // Optionally, a caption can be added
+        groupId: currentGroupId,
+        fileUrl,
+        fileType,
+      });
+      addMessageToUI(messageResponse.data);
+      scrollToBottom();
+      fileInput.value = ''; // Reset file input
+    } catch (error) {
+      handleError(error);
+    }
+  }
+
   function addMessageToUI(message) {
-    // Prevent duplicate rendering by checking if the message already exists
+    // Prevent duplicate rendering by checking if the message element exists
     if (document.getElementById(`msg-${message.id}`)) return;
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message';
     messageDiv.id = `msg-${message.id}`;
-    messageDiv.innerHTML = `
-      <span class="username">${message.username}:</span>
-      <span class="content">${message.content}</span>
-      <span class="timestamp">${new Date(
-        message.createdAt
-      ).toLocaleTimeString()}</span>
-    `;
+    let innerHTML = `<span class="username">${message.username}:</span>`;
+    if (message.content) {
+      innerHTML += `<span class="content">${message.content}</span>`;
+    }
+    if (message.fileUrl) {
+      if (message.fileType && message.fileType.startsWith('image')) {
+        innerHTML += `<img src="${message.fileUrl}" alt="Image" class="chat-image" />`;
+      } else if (message.fileType && message.fileType.startsWith('video')) {
+        innerHTML += `<video controls class="chat-video">
+                        <source src="${message.fileUrl}" type="${message.fileType}">
+                      </video>`;
+      } else {
+        innerHTML += `<a href="${message.fileUrl}" target="_blank" class="download-link">Download File</a>`;
+      }
+    }
+    innerHTML += `<span class="timestamp">${new Date(
+      message.createdAt
+    ).toLocaleTimeString()}</span>`;
+    messageDiv.innerHTML = innerHTML;
     messagesContainer.appendChild(messageDiv);
   }
 
@@ -257,7 +302,6 @@ document.addEventListener('DOMContentLoaded', () => {
       searchInput.value = '';
       searchResultsContainer.innerHTML = '';
       loadInvitations();
-      // Emit a socket event to notify all clients about invitation changes (if your backend supports it)
       socket.emit('invitationUpdated', { groupId: currentGroupId });
     } catch (error) {
       console.error('Error sending invitation:', error);
@@ -265,7 +309,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Expose invitation functions globally so inline onclick works
   window.acceptInvitation = async function (invitationId) {
     try {
       await axios.post(`/invitations/${invitationId}/accept`);
@@ -289,7 +332,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.sendInvitationFromSearch = sendInvitationFromSearch;
 
-  // Instead of polling for invitations, we rely solely on the socket event 'invitationUpdated'
-  // Optionally, you can load invitations once on page load:
   loadInvitations();
 });

@@ -417,3 +417,8 @@ body {
 #search-results li button:hover {
   background: #5b6eae;
 }
+
+/* Additional styles for file input */
+#file-input {
+  margin-right: 0.5rem;
+}

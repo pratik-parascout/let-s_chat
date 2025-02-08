@@ -6,35 +6,21 @@ const Group = require('./group');
 const Message = sequelize.define(
   'Message',
   {
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
-    },
-    content: {
-      type: DataTypes.TEXT,
-      allowNull: false,
-    },
-    username: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
+    id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    content: { type: DataTypes.TEXT, allowNull: false },
+    username: { type: DataTypes.STRING, allowNull: false },
+    fileUrl: { type: DataTypes.STRING, allowNull: true },
+    fileType: { type: DataTypes.STRING, allowNull: true },
     userId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      references: {
-        model: User,
-        key: 'id',
-      },
+      references: { model: User, key: 'id' },
       onDelete: 'CASCADE',
     },
     groupId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      references: {
-        model: Group,
-        key: 'id',
-      },
+      references: { model: Group, key: 'id' },
       onDelete: 'CASCADE',
     },
   },
