@@ -3,12 +3,10 @@ const path = require('path');
 const express = require('express');
 const cors = require('cors');
 
-// Create Express app and HTTP server
 const app = express();
 const http = require('http');
 const server = http.createServer(app);
 
-// Initialize Socket.IO and attach it to the HTTP server
 const socketIo = require('socket.io');
 const io = socketIo(server, {
   cors: {
@@ -17,17 +15,16 @@ const io = socketIo(server, {
   },
 });
 
-// Database connection
 const sequelize = require('./utils/database');
 
-// Import routes
+// Routes
 const signupRoutes = require('./routes/signup');
 const loginRoutes = require('./routes/login');
 const chatRoutes = require('./routes/chat');
 const groupActionRoutes = require('./routes/groupAction');
+// Update the following if your file is named "invitations.js" instead of "invitation.js"
 const invitationRoutes = require('./routes/invitation');
 
-// Import associations (this will create and set up your models and relationships)
 const {
   User,
   Group,
@@ -36,7 +33,7 @@ const {
   UserGroup,
 } = require('./models/associations');
 
-// CORS configuration
+// CORS Configuration
 app.use(
   cors({
     origin: process.env.CLIENT_URL || 'http://localhost:3000',
@@ -46,14 +43,14 @@ app.use(
   })
 );
 
-// Middleware for serving static files and parsing JSON/URL-encoded data
+// Middleware: Serve static files and parse JSON / URL-encoded data
 app.use(express.static(path.join(__dirname, 'public/html')));
 app.use('/css', express.static(path.join(__dirname, 'public/css')));
 app.use('/js', express.static(path.join(__dirname, 'public/js')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Mount routes
+// Mount Routes
 app.use('/signup', signupRoutes);
 app.use('/login', loginRoutes);
 app.use('/chat', chatRoutes);
@@ -66,34 +63,52 @@ app.use((err, req, res, next) => {
   res.status(500).send('Something broke!');
 });
 
-// Make Socket.IO instance available to controllers via app.set
+// Expose Socket.IO instance to controllers via app.set
 app.set('io', io);
 
-// Socket.IO event handling
+// Socket.IO Event Handling
 io.on('connection', (socket) => {
   console.log(`Socket connected: ${socket.id}`);
 
-  // Listen for joining a group room
-  socket.on('joinGroup', (groupId) => {
+  // Listen for joinGroup event with an object { groupId, username }
+  socket.on('joinGroup', (data) => {
+    const { groupId, username } = data;
     socket.join(`group_${groupId}`);
-    console.log(`Socket ${socket.id} joined room group_${groupId}`);
+    // Save data on the socket for later use (e.g., on disconnect)
+    socket.groupId = groupId;
+    socket.username = username;
+    // Broadcast to others in the room that this user has joined
+    socket.to(`group_${groupId}`).emit('userJoined', { username });
+    console.log(
+      `Socket ${socket.id} joined room group_${groupId} as ${username}`
+    );
   });
 
-  // Optionally, listen for leaving a group
-  socket.on('leaveGroup', (groupId) => {
+  // Listen for leaveGroup event
+  socket.on('leaveGroup', (data) => {
+    const { groupId, username } = data;
     socket.leave(`group_${groupId}`);
+    socket.to(`group_${groupId}`).emit('userLeft', { username });
     console.log(`Socket ${socket.id} left room group_${groupId}`);
   });
 
+  // On disconnect, if the socket was in a group, notify others
   socket.on('disconnect', () => {
+    if (socket.groupId && socket.username) {
+      socket
+        .to(`group_${socket.groupId}`)
+        .emit('userLeft', { username: socket.username });
+      console.log(
+        `User ${socket.username} disconnected from group_${socket.groupId}`
+      );
+    }
     console.log(`Socket disconnected: ${socket.id}`);
   });
 });
 
-// Start the server after syncing the database
 const PORT = process.env.PORT || 3000;
 sequelize
-  .sync() // For production, consider using { alter: true } or proper migrations instead of force
+  .sync() // In production, consider using migrations or { alter: true }
   .then(() => {
     server.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);

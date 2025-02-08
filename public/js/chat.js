@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // DOM elements
   const messagesContainer = document.getElementById('messages');
   const messageInput = document.getElementById('message-input');
   const sendButton = document.getElementById('send-button');
@@ -10,21 +11,26 @@ document.addEventListener('DOMContentLoaded', () => {
   const searchResultsContainer = document.getElementById('search-results');
 
   let currentGroupId = null;
-  let lastMessageId = 0;
+  let lastMessageId = 0; // Only used for the initial history load
 
+  // Get token and username from localStorage
   const token = localStorage.getItem('token');
   if (!token) {
     window.location.href = '/login';
     return;
   }
   axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  const username = localStorage.getItem('username') || 'Unknown';
 
+  // Initialize Socket.IO client
   const socket = io();
 
+  // Join a group room by emitting both groupId and username
   function joinGroupRoom(groupId) {
-    socket.emit('joinGroup', groupId);
+    socket.emit('joinGroup', { groupId, username });
   }
 
+  // Listen for new messages from the server via socket
   socket.on('newMessage', (message) => {
     if (message.groupId == currentGroupId) {
       addMessageToUI(message);
@@ -33,10 +39,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  socket.on('invitationUpdated', (data) => {
+  // Listen for notifications when a user joins the room
+  socket.on('userJoined', (data) => {
+    addSystemMessage(`${data.username} has joined the chat.`);
+  });
+
+  // Listen for notifications when a user leaves the room
+  socket.on('userLeft', (data) => {
+    addSystemMessage(`${data.username} has left the chat.`);
+  });
+
+  // Listen for invitation updates from the server
+  socket.on('invitationUpdated', () => {
     loadInvitations();
   });
 
+  // Initial load of groups and invitations; then setup event listeners
   loadGroups();
   loadInvitations();
   setupEventListeners();
@@ -52,7 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
         selectGroup(e.target.dataset.groupId);
       }
     });
-    // Bind search input events
     document
       .getElementById('search-btn')
       .addEventListener('click', searchUsers);
@@ -74,7 +91,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function selectGroup(groupId) {
     currentGroupId = groupId;
-    // Update the group title in the header
     const groupTitleElem = document.getElementById('group-title');
     const selectedGroupElem = document.querySelector(
       `[data-group-id="${groupId}"]`
@@ -83,11 +99,12 @@ document.addEventListener('DOMContentLoaded', () => {
       ? selectedGroupElem.textContent
       : 'Group';
     messagesContainer.innerHTML = '';
-    lastMessageId = 0;
+    lastMessageId = 0; // Reset history loader
     joinGroupRoom(groupId);
     loadMessagesHistory();
   }
 
+  // Load initial message history via HTTP (once) when a group is selected
   async function loadMessagesHistory() {
     if (!currentGroupId) return;
     try {
@@ -125,6 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
         groupId: currentGroupId,
       });
       messageInput.value = '';
+      // Optionally, skip immediate rendering since socket will deliver the message.
       addMessageToUI(response.data);
       scrollToBottom();
     } catch (error) {
@@ -146,6 +164,14 @@ document.addEventListener('DOMContentLoaded', () => {
       ).toLocaleTimeString()}</span>
     `;
     messagesContainer.appendChild(messageDiv);
+  }
+
+  function addSystemMessage(text) {
+    const systemDiv = document.createElement('div');
+    systemDiv.className = 'message system';
+    systemDiv.textContent = text;
+    messagesContainer.appendChild(systemDiv);
+    scrollToBottom();
   }
 
   function scrollToBottom() {
@@ -231,6 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
       searchInput.value = '';
       searchResultsContainer.innerHTML = '';
       loadInvitations();
+      // Emit a socket event to notify all clients about invitation changes (if your backend supports it)
       socket.emit('invitationUpdated', { groupId: currentGroupId });
     } catch (error) {
       console.error('Error sending invitation:', error);
@@ -238,6 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Expose invitation functions globally so inline onclick works
   window.acceptInvitation = async function (invitationId) {
     try {
       await axios.post(`/invitations/${invitationId}/accept`);
@@ -261,5 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.sendInvitationFromSearch = sendInvitationFromSearch;
 
+  // Instead of polling for invitations, we rely solely on the socket event 'invitationUpdated'
+  // Optionally, you can load invitations once on page load:
   loadInvitations();
 });
