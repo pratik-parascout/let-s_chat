@@ -97,9 +97,11 @@ io.on('connection', (socket) => {
   });
 });
 
+require('./cron/archiveChats');
+
 const PORT = process.env.PORT || 3000;
 sequelize
-  .sync()
+  .sync({ alter: true })
   .then(() => {
     server.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
